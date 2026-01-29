@@ -79,7 +79,7 @@
             width: 100%;
             max-width: 420px;
             padding: 2.5rem;
-            background: rgba(255, 255, 255, 0.5); /* 透明度改为50% */
+            background: rgba(255, 255, 255, 0.3); /* 透明度改为50% */
             backdrop-filter: blur(8px);
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); /* 阴影调浅，适配白背景 */
@@ -171,7 +171,7 @@
             '#00ff99', '#00ffff', '#0099ff', '#0066ff', '#0000ff', '#9900ff', '#cc00ff',
             '#ff00ff', '#ff0066', '#777777', '#ffffff', '#f5a623', '#4a90e2'
         ];
-        const fireworkInterval = 10000; // 保持10秒间隔绽放
+        const fireworkInterval = 5000; // 保持10秒间隔绽放
         let errorTimer = null;
 
         // 随机数工具函数
@@ -182,7 +182,7 @@
         // 创建单个烟花（修改：烟花弹大小不同、升空高度更高、火花数量更多+大小不同）
         function createFirework() {
             // 一次生成3个烟花弹，数量翻倍（原1个，现多数量）
-            for (let f = 0; f < 3; f++) {
+            for (let f = 0; f < 7; f++) {
                 // 1. 创建烟花弹（升空部分：大小差异化，4-8px）
                 const firework = document.createElement('div');
                 firework.className = 'firework';
@@ -206,7 +206,7 @@
                         const spark = document.createElement('div');
                         spark.className = 'spark';
                         // 火花大小差异化：2-5px（不同大小，更有层次感）
-                        const sparkSize = getRandom(2, 5);
+                        const sparkSize = getRandom(2, 10);
                         spark.style.setProperty('--spark-size', `${sparkSize}px`);
                         // 火花位置与烟花弹绽放位置一致
                         spark.style.left = `${left}%`;
@@ -303,3 +303,4 @@
     </script>
 </body>
 </html>
+
