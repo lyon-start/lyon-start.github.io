@@ -362,8 +362,8 @@
                 col.className = 'col-12 col-sm-6 col-md-4';
                 // 价格容错：原有逻辑无修改
                 const picPrice = priceData[i] ? String(priceData[i]) : '暂无';
-                // 新增：商品名称获取（从price.json的m_1~m_15读取，容错为“奖励商品X”）
-                const picName = priceData[`m_${i}`] ? String(priceData[`m_${i}`]) : `奖励商品${i}`;
+                // 新增：商品名称获取（从price.json的m_1~m_15读取，容错为“奖励X”）
+                const picName = priceData[`m_${i}`] ? String(priceData[`m_${i}`]) : `奖励${i}`;
                 // 新增name-tag标签到HTML结构中
                 col.innerHTML = `
                 <div class="pic-box">
@@ -490,3 +490,4 @@
     </script>
 </body>
 </html>
+
