@@ -219,6 +219,7 @@
         <a href="second-page.html" class="nav-item" id="navIndex">首页</a>
         <a href="https://dazi.91xjr.com/" target="_blank" class="nav-item" id="navTyping">打字练习</a>
         <div class="nav-item active" id="navTimer">计时器</div>
+        <a href="luck.html" target="_blank" class="nav-item" id="navluck">幸运抽奖</a>
         <div class="nav-item" id="navLogout">退出登录</div>
     </div>
 
@@ -259,10 +260,10 @@
         let remainingSeconds = 0; // 剩余时长（秒）
         let timerInterval = null;
         let isRunning = false;
-        let audioInstance = null; // 提示音实例（替换原有audio）
+        let audioInstance = null; // 提示音实例（改为MP3播放）
         const MIN_TIME = 60; // 最小时长：1分钟（60秒）
         const MAX_TIME = 3600; // 最大时长：60分钟（3600秒）
-        const ALERT_TIME = 3000; // 提示音播放时长：10秒
+        const ALERT_TIME = 4000; // 提示音播放时长：3秒
 
         // 初始化：固定时长按钮事件（5/10分钟）
         fixedTimeBtns.forEach(btn => {
@@ -326,11 +327,11 @@
             timerInterval = setInterval(() => {
                 remainingSeconds--;
                 updateDisplay();
-                // 计时结束：停止计时+变红+播放10秒提示音
+                // 计时结束：停止计时+变红+播放MP3提示音
                 if (remainingSeconds <= 0) {
                     stopTimer();
                     timerDisplay.classList.add('red'); // 数字变红
-                    playAlertAudio(); // 播放提示音
+                    playAlertAudio(); // 播放同文件夹1.mp3
                 }
             }, 1000);
         }
@@ -374,45 +375,34 @@
             timerDisplay.textContent = `${minutes}:${seconds}`;
         }
 
-        // 【核心修复】播放提示音：用AudioContext生成，绕过浏览器自动播放限制
+        // 【修改核心】播放提示音：播放同文件夹下的1.mp3
         function playAlertAudio() {
-            // 先停止原有提示音
+            // 先停止原有音频
             stopAlertAudio();
             try {
-                // 创建音频上下文，兼容各浏览器
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator(); // 音频振荡器（生成声音）
-                const gainNode = audioContext.createGain(); // 音量控制器
-
-                // 连接音频节点：振荡器 → 音量 → 扬声器
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                // 设置提示音参数：正弦波（声音柔和）、音调880Hz、音量0.5（适中不刺耳）
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-                gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-
-                // 开始播放
-                oscillator.start();
-                // 保存实例，用于后续停止
-                audioInstance = { oscillator, audioContext, gainNode };
-
-                // 10秒后自动停止提示音
+                // 创建音频实例，路径为同文件夹的1.mp3
+                audioInstance = new Audio('1.mp3');
+                audioInstance.volume = 0.8; // 设置音量（0-1，0.8适中）
+                audioInstance.play().catch(err => {
+                    // 兼容浏览器自动播放限制：尝试通过用户交互解锁
+                    document.body.addEventListener('click', () => {
+                        audioInstance.play();
+                    }, { once: true });
+                    console.log('提示音播放触发用户交互解锁：', err);
+                });
+                // 播放指定时长后自动停止
                 setTimeout(stopAlertAudio, ALERT_TIME);
             } catch (err) {
-                console.log('提示音播放异常：', err);
+                console.log('MP3提示音播放异常：', err);
             }
         }
 
-        // 【核心修复】停止提示音
+        // 【修改核心】停止提示音：销毁1.mp3音频实例
         function stopAlertAudio() {
             if (audioInstance) {
-                // 停止振荡器+关闭音频上下文，彻底停止声音
-                audioInstance.oscillator.stop();
-                audioInstance.audioContext.close();
-                // 清空实例，释放资源
-                audioInstance = null;
+                audioInstance.pause(); // 暂停播放
+                audioInstance.currentTime = 0; // 重置播放进度
+                audioInstance = null; // 清空实例释放资源
             }
         }
 
