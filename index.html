@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统登录</title>
+    <!-- 引入Bootstrap5简化布局和样式 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        /* 页面基础样式：白色背景，居中登录框 */
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #ffffff; /* 纯白色背景 */
+            overflow: hidden;
+            position: relative;
+        }
+        /* 烟花容器：占满整个页面，底层显示 */
+        .fireworks-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+        /* 烟花弹：升空的小光点，大小微差异化 */
+        .firework {
+            position: absolute;
+            bottom: 0;
+            width: var(--firework-size); /* 动态设置烟花弹大小 */
+            height: var(--firework-size);
+            border-radius: 50%;
+            background: #333333; /* 深色烟花弹，白色背景更明显 */
+            animation: launch linear forwards;
+            z-index: 2;
+        }
+        /* 烟花绽放的火花：大小差异化 */
+        .spark {
+            position: absolute;
+            width: var(--spark-size); /* 动态设置火花大小 */
+            height: var(--spark-size);
+            border-radius: 50%;
+            animation: explode ease-out forwards;
+            z-index: 3;
+        }
+        /* 烟花升空动画：高度大幅提高（几乎到页面顶部） */
+        @keyframes launch {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(calc(-100vh + var(--launch-height)));
+                opacity: 0;
+            }
+        }
+        /* 烟花绽放动画：向四周扩散并消失 */
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--x), var(--y)) scale(1.8);
+                opacity: 0;
+            }
+        }
+        /* 登录框样式：50%透明度，磨砂玻璃，白色背景更适配 */
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 2.5rem;
+            background: rgba(255, 255, 255, 0.5); /* 透明度50% */
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); /* 阴影调浅，适配白背景 */
+            z-index: 10;
+            transition: border 0.3s ease;
+        }
+        .login-card h3 {
+            color: #1a202c;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        /* 登录框错误动效：红色边框+轻微左右跳动 */
+        .login-card.error {
+            border: 2px solid #dc2626;
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+        /* 输入框样式优化：白背景下边框更清晰 */
+        .form-control {
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            background: rgba(255, 255, 255, 0.8); /* 输入框加轻微透明，提升质感 */
+        }
+        .form-control:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+            outline: none;
+        }
+        /* 登录按钮：全屏宽度，主色调，hover交互 */
+        .login-btn {
+            width: 100%;
+            background-color: #3b82f6;
+            border: none;
+            padding: 0.75rem 0;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 8px;
+            color: #fff;
+        }
+        .login-btn:hover {
+            background-color: #2563eb;
+            color: #fff;
+        }
+        /* 错误提示文字：红色，居中，默认隐藏 */
+        .error-tip {
+            color: #dc2626;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+        .error-tip.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 烟花容器 -->
+    <div class="fireworks-container" id="fireworksContainer"></div>
+
+    <!-- 登录框 -->
+    <div class="login-card" id="loginCard">
+        <h3>用户登录</h3>
+        <form id="loginForm">
+            <input type="text" class="form-control" id="username" placeholder="请输入用户名" required>
+            <input type="password" class="form-control" id="password" placeholder="请输入密码" required>
+            <button type="submit" class="btn login-btn">登录</button>
+        </form>
+        <!-- 错误提示文字 -->
+        <div class="error-tip" id="errorTip">账号或密码错误，请检查后重新输入</div>
+    </div>
+
+    <!-- 引入BootstrapJS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ---------------------- 烟花动画核心代码（无任何修改） ----------------------
+        const fireworksContainer = document.getElementById('fireworksContainer');
+        // 烟花颜色集合：大幅增加颜色，更丰富（含暖色调、冷色调、亮色）
+        const sparkColors = [
+            '#ff0000', '#ff6666', '#ff9900', '#ffcc00', '#ffff00', '#99ff00', '#00ff00',
+            '#00ff99', '#00ffff', '#0099ff', '#0066ff', '#0000ff', '#9900ff', '#cc00ff',
+            '#ff00ff', '#ff0066', '#777777', '#ffffff', '#f5a623', '#4a90e2'
+        ];
+        const fireworkInterval = 10000; // 保持10秒间隔绽放
+        let errorTimer = null;
+
+        // 随机数工具函数
+        function getRandom(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        // 创建单个烟花（无修改：多数量、大小不同、颜色各异、升空更高）
+        function createFirework() {
+            // 一次生成3个烟花弹，数量翻倍（原1个，现多数量）
+            for (let f = 0; f < 3; f++) {
+                // 1. 创建烟花弹（升空部分：大小差异化，4-8px）
+                const firework = document.createElement('div');
+                firework.className = 'firework';
+                const fireworkSize = getRandom(4, 8); // 烟花弹大小：4-8px不同
+                firework.style.setProperty('--firework-size', `${fireworkSize}px`);
+                // 随机水平位置：页面5%到95%，更分散
+                const left = getRandom(5, 95);
+                firework.style.left = `${left}%`;
+                // 升空高度：85%-95%视口高度（大幅提高，几乎到页面顶部）
+                const launchHeight = getRandom(85, 95);
+                firework.style.setProperty('--launch-height', `${launchHeight}vh`);
+                // 随机升空时长：2-5秒（更快，配合高高度）
+                firework.style.animationDuration = `${getRandom(2, 5)}s`;
+                fireworksContainer.appendChild(firework);
+
+                // 2. 烟花弹升空结束后绽放火花（无修改：数量更多+大小差异化）
+                setTimeout(() => {
+                    // 火花数量：60-100个（原30-50，翻倍，更浓密）
+                    const sparkCount = getRandom(60, 100);
+                    for (let i = 0; i < sparkCount; i++) {
+                        const spark = document.createElement('div');
+                        spark.className = 'spark';
+                        // 火花大小差异化：2-5px（不同大小，更有层次感）
+                        const sparkSize = getRandom(2, 5);
+                        spark.style.setProperty('--spark-size', `${sparkSize}px`);
+                        // 火花位置与烟花弹绽放位置一致
+                        spark.style.left = `${left}%`;
+                        spark.style.top = `${100 - launchHeight}%`;
+                        // 随机火花颜色，从丰富的颜色库中选
+                        spark.style.backgroundColor = sparkColors[Math.floor(getRandom(0, sparkColors.length))];
+                        // 随机扩散方向（x/y轴范围扩大，绽放更宽）
+                        const x = getRandom(-50, 50);
+                        const y = getRandom(-50, 50);
+                        spark.style.setProperty('--x', `${x}px`);
+                        spark.style.setProperty('--y', `${y}px`);
+                        // 随机绽放时长：1-2秒，更持久
+                        spark.style.animationDuration = `${getRandom(1, 2)}s`;
+                        fireworksContainer.appendChild(spark);
+                        // 火花消失后移除DOM，避免内存占用
+                        setTimeout(() => spark.remove(), 2000);
+                    }
+                    // 烟花弹升空后移除DOM
+                    firework.remove();
+                }, parseFloat(firework.style.animationDuration) * 1000);
+            }
+        }
+
+        // 页面加载后立即生成烟花，之后每10秒生成一次
+        window.onload = () => {
+            createFirework();
+            setInterval(createFirework, fireworkInterval);
+        };
+
+        // ---------------------- 登录功能核心代码（仅修改跳转逻辑） ----------------------
+        const loginForm = document.getElementById('loginForm');
+        const loginCard = document.getElementById('loginCard');
+        const errorTip = document.getElementById('errorTip');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+
+        // 表单提交事件：阻止默认刷新，执行登录校验
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            // 清除之前的错误样式和定时器
+            loginCard.classList.remove('error');
+            errorTip.classList.remove('show');
+            clearTimeout(errorTimer);
+
+            // 获取输入值并去空格
+            const inputUser = usernameInput.value.trim();
+            const inputPwd = passwordInput.value.trim();
+
+            // 空值校验：直接触发错误动效
+            if (!inputUser || !inputPwd) {
+                triggerError('请输入用户名和密码');
+                return;
+            }
+
+            try {
+                // 读取本地user.json文件
+                const response = await fetch('user.json');
+                if (!response.ok) throw new Error('用户配置文件不存在');
+                const userData = await response.json();
+                const users = userData.users || [];
+
+                // 校验账号密码是否匹配
+                const isMatch = users.some(user =>
+                    user.username === inputUser && user.password === inputPwd
+                );
+
+                if (isMatch) {
+                    // 【核心修改：根据用户名判断跳转页面】
+                    if (inputUser === 'admin') {
+                        // 用户名是admin，跳转到第三个页面
+                        window.location.href = 'third-page.html';
+                    } else {
+                        // 其他用户名，跳转到第二个页面star-score.html
+                        window.location.href = 'second-page.html';
+                    }
+                } else {
+                    // 匹配失败：触发错误动效
+                    triggerError();
+                }
+            } catch (error) {
+                // 异常处理（文件丢失/解析错误）
+                console.error('登录异常：', error);
+                triggerError('系统异常，请检查配置文件');
+            }
+        });
+
+        // 触发登录框错误动效的工具函数（无修改）
+        function triggerError(tipText = '账号或密码错误，请检查后重新输入') {
+            // 更新错误提示文字
+            errorTip.innerText = tipText;
+            // 添加错误样式和提示显示
+            loginCard.classList.add('error');
+            errorTip.classList.add('show');
+            // 3秒后自动移除错误样式和提示
+            errorTimer = setTimeout(() => {
+                loginCard.classList.remove('error');
+                errorTip.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

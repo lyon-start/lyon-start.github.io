@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器 - 星星积分</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            min-height: 100vh;
+            background-color: #ffffff;
+            padding: 2rem;
+            font-family: "Microsoft YaHei", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        /* 导航栏：和原页面完全一致 */
+        .nav-bar {
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+            padding: 1rem 2rem;
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .nav-item {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a202c;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .nav-item:hover {
+            background-color: #f0f9f2;
+            color: #1f6f4a;
+        }
+        .nav-item.active {
+            background-color: #1f6f4a;
+            color: #ffffff;
+        }
+        /* 计时器核心样式 */
+        .timer-container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        /* 固定时长+加减按钮组 */
+        .time-set {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 2.5rem;
+        }
+        /* 固定时长按钮 */
+        .fixed-time-btn {
+            padding: 0.8rem 2rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1a202c;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .fixed-time-btn:hover {
+            border-color: #1f6f4a;
+            color: #1f6f4a;
+        }
+        .fixed-time-btn.active {
+            background: #1f6f4a;
+            color: #fff;
+            border-color: #1f6f4a;
+        }
+        /* 加减按钮 */
+        .add-minus-btn {
+            padding: 0.8rem 1.8rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a202c;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .add-minus-btn:hover {
+            border-color: #1f6f4a;
+            color: #1f6f4a;
+        }
+        /* 计时器显示区域：新增红色样式 */
+        .timer-display {
+            font-size: 5rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin: 2rem 0;
+            letter-spacing: 2px;
+            transition: color 0.3s ease;
+        }
+        .timer-display.red {
+            color: #ef4444; /* 计时结束红色 */
+        }
+        /* 操作按钮组 */
+        .timer-ctrl {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .ctrl-btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        #startBtn {
+            background: #1f6f4a;
+            color: #fff;
+        }
+        #startBtn:hover {
+            background: #185c3c;
+        }
+        #startBtn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        #pauseBtn {
+            background: #f59e0b;
+            color: #fff;
+            display: none;
+        }
+        #pauseBtn:hover {
+            background: #d97706;
+        }
+        #resetBtn {
+            background: #ef4444;
+            color: #fff;
+        }
+        #resetBtn:hover {
+            background: #dc2626;
+        }
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            .nav-bar {
+                padding: 0.8rem 1.5rem;
+                gap: 1rem;
+                margin-bottom: 2rem;
+            }
+            .nav-item {
+                font-size: 1.1rem;
+                padding: 0.4rem 0.8rem;
+            }
+            .timer-container {
+                padding: 2rem 1rem;
+            }
+            .timer-display {
+                font-size: 3rem;
+            }
+            .ctrl-btn {
+                padding: 0.8rem 1.5rem;
+                min-width: 100px;
+                font-size: 1.1rem;
+            }
+            .fixed-time-btn {
+                padding: 0.6rem 1.5rem;
+                font-size: 1.1rem;
+            }
+            .add-minus-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.3rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .timer-display {
+                font-size: 2.5rem;
+            }
+            .time-set {
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏：和原页面一致 -->
+    <div class="nav-bar">
+        <a href="second-page.html" class="nav-item" id="navIndex">首页</a>
+        <a href="https://daziya.com/" target="_blank" class="nav-item" id="navTyping">打字练习</a>
+        <div class="nav-item active" id="navTimer">计时器</div>
+        <a href="luck.html" target="_blank" class="nav-item" id="navluck">幸运抽奖</a>
+        <div class="nav-item" id="navLogout">退出登录</div>
+    </div>
+
+    <!-- 计时器核心容器：重构为固定时长+加减按钮 -->
+    <div class="timer-container">
+        <h2 style="color: #1f6f4a; margin-bottom: 1rem; font-size: 1.8rem;">自定义计时器</h2>
+        <!-- 时间设置区：5/10分钟固定项 + 加/减按钮 -->
+        <div class="time-set">
+            <div class="fixed-time-btn" data-time="300">5分钟</div>
+            <div class="fixed-time-btn" data-time="600">10分钟</div>
+            <div class="add-minus-btn" id="minusBtn">-</div>
+            <div class="add-minus-btn" id="addBtn">+</div>
+        </div>
+        <!-- 计时器显示：默认灰色，结束变红 -->
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <!-- 操作按钮：开始默认禁用，选时间后启用 -->
+        <div class="timer-ctrl">
+            <button class="ctrl-btn" id="startBtn" disabled>开始</button>
+            <button class="ctrl-btn" id="pauseBtn">暂停</button>
+            <button class="ctrl-btn" id="resetBtn">重置</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 元素获取
+        const fixedTimeBtns = document.querySelectorAll('.fixed-time-btn');
+        const minusBtn = document.getElementById('minusBtn');
+        const addBtn = document.getElementById('addBtn');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const navLogout = document.getElementById('navLogout');
+
+        // 计时器全局变量
+        let totalSeconds = 0; // 总时长（秒），初始0（未选时间）
+        let remainingSeconds = 0; // 剩余时长（秒）
+        let timerInterval = null;
+        let isRunning = false;
+        let audioInstance = null; // 提示音实例（改为MP3播放）
+        const MIN_TIME = 60; // 最小时长：1分钟（60秒）
+        const MAX_TIME = 3600; // 最大时长：60分钟（3600秒）
+        const ALERT_TIME = 4000; // 提示音播放时长：3秒
+
+        // 初始化：固定时长按钮事件（5/10分钟）
+        fixedTimeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // 停止当前计时器（如果运行）
+                if (isRunning) stopTimer();
+                // 移除固定按钮active（仅标记选中状态，不高亮）
+                fixedTimeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // 设置总时长和剩余时长
+                totalSeconds = parseInt(btn.dataset.time);
+                remainingSeconds = totalSeconds;
+                // 更新显示+启用开始按钮
+                updateDisplay();
+                startBtn.disabled = false;
+            });
+        });
+
+        // 减按钮事件：每次-1分钟，不低于1分钟
+        minusBtn.addEventListener('click', () => {
+            if (totalSeconds <= MIN_TIME) return; // 小于等于1分钟，禁止减
+            if (isRunning) stopTimer(); // 运行中则暂停
+            // 移除固定按钮active
+            fixedTimeBtns.forEach(b => b.classList.remove('active'));
+            // 总时长-60秒（1分钟）
+            totalSeconds -= 60;
+            remainingSeconds = totalSeconds;
+            updateDisplay();
+            startBtn.disabled = false;
+        });
+
+        // 加按钮事件：每次+1分钟，不高于60分钟
+        addBtn.addEventListener('click', () => {
+            if (totalSeconds >= MAX_TIME) return; // 大于等于60分钟，禁止加
+            if (isRunning) stopTimer(); // 运行中则暂停
+            // 移除固定按钮active
+            fixedTimeBtns.forEach(b => b.classList.remove('active'));
+            // 总时长+60秒（1分钟）
+            totalSeconds += 60;
+            remainingSeconds = totalSeconds;
+            updateDisplay();
+            startBtn.disabled = false;
+        });
+
+        // 开始/暂停/重置按钮事件
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        resetBtn.addEventListener('click', resetTimer);
+        // 退出登录事件（和原页面一致，关闭当前页面）
+        navLogout.addEventListener('click', () => {
+            if (confirm('确定要退出登录吗？')) window.close();
+        });
+
+        // 开始计时器
+        function startTimer() {
+            if (isRunning || remainingSeconds <= 0) return;
+            isRunning = true;
+            startBtn.style.display = 'none';
+            pauseBtn.style.display = 'block';
+            // 每秒执行一次计时
+            timerInterval = setInterval(() => {
+                remainingSeconds--;
+                updateDisplay();
+                // 计时结束：停止计时+变红+播放MP3提示音
+                if (remainingSeconds <= 0) {
+                    stopTimer();
+                    timerDisplay.classList.add('red'); // 数字变红
+                    playAlertAudio(); // 播放同文件夹1.mp3
+                }
+            }, 1000);
+        }
+
+        // 暂停计时器
+        function pauseTimer() {
+            if (!isRunning) return;
+            stopTimer();
+            startBtn.style.display = 'block';
+            pauseBtn.style.display = 'none';
+        }
+
+        // 停止计时器（清除定时器）
+        function stopTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+        }
+
+        // 重置计时器：恢复初始状态（时间0+灰色+禁用开始+停止提示音）
+        function resetTimer() {
+            // 停止计时和提示音
+            stopTimer();
+            stopAlertAudio();
+            // 重置时长
+            totalSeconds = 0;
+            remainingSeconds = 0;
+            // 恢复样式+禁用开始按钮
+            timerDisplay.classList.remove('red');
+            fixedTimeBtns.forEach(b => b.classList.remove('active'));
+            startBtn.disabled = true;
+            startBtn.style.display = 'block';
+            pauseBtn.style.display = 'none';
+            // 更新显示为00:00
+            updateDisplay();
+        }
+
+        // 更新计时器显示：格式 MM:SS
+        function updateDisplay() {
+            const minutes = Math.floor(remainingSeconds / 60).toString().padStart(2, '0');
+            const seconds = (remainingSeconds % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${minutes}:${seconds}`;
+        }
+
+        // 【修改核心】播放提示音：播放同文件夹下的1.mp3
+        function playAlertAudio() {
+            // 先停止原有音频
+            stopAlertAudio();
+            try {
+                // 创建音频实例，路径为同文件夹的1.mp3
+                audioInstance = new Audio('1.mp3');
+                audioInstance.volume = 0.8; // 设置音量（0-1，0.8适中）
+                audioInstance.play().catch(err => {
+                    // 兼容浏览器自动播放限制：尝试通过用户交互解锁
+                    document.body.addEventListener('click', () => {
+                        audioInstance.play();
+                    }, { once: true });
+                    console.log('提示音播放触发用户交互解锁：', err);
+                });
+                // 播放指定时长后自动停止
+                setTimeout(stopAlertAudio, ALERT_TIME);
+            } catch (err) {
+                console.log('MP3提示音播放异常：', err);
+            }
+        }
+
+        // 【修改核心】停止提示音：销毁1.mp3音频实例
+        function stopAlertAudio() {
+            if (audioInstance) {
+                audioInstance.pause(); // 暂停播放
+                audioInstance.currentTime = 0; // 重置播放进度
+                audioInstance = null; // 清空实例释放资源
+            }
+        }
+
+        // 页面卸载时：停止计时和提示音（避免残留）
+        window.addEventListener('beforeunload', () => {
+            stopTimer();
+            stopAlertAudio();
+        });
+    </script>
+</body>
+</html>

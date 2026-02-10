@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星星积分-图片展示页</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            min-height: 100vh;
+            background-color: #ffffff;
+            padding: 2rem;
+            font-family: "Microsoft YaHei", sans-serif;
+            overflow-x: hidden;
+        }
+        /* 导航栏样式 - 新增计时器选项适配 */
+        .nav-bar {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+            padding: 1rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .nav-item {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a202c;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .nav-item:hover {
+            background-color: #f0f9f2;
+            color: #1f6f4a;
+        }
+        .nav-item.active {
+            background-color: #1f6f4a;
+            color: #ffffff;
+        }
+        /* 原有：数据栏样式 */
+        .data-bar {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 2rem 2.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            width: 100%;
+            gap: 2rem;
+        }
+        .count-item {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #1a202c;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+        }
+        .count-item span {
+            margin: 0 0.5rem;
+            color: #ff9800;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .score-item span {
+            color: #2196f3;
+        }
+        .welcome-text {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1f6f4a !important;
+            margin-left: 1.8rem !important;
+            white-space: nowrap;
+            line-height: 1;
+            padding: 0;
+            border: 0;
+        }
+        .pic-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 1rem;
+            padding-left: 0.5rem;
+        }
+        .pic-box {
+            width: 100%;
+            height: 440px; /* 修改1：图片高度增加一倍（原220px→440px） */
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.8);
+            position: relative;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+        .pic-box:hover {
+            border-color: #1f6f4a;
+        }
+        .pic-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .pic-box img:hover {
+            transform: scale(1.05);
+        }
+        .price-tag {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 87, 34, 0.9);
+            color: #ffffff;
+            font-size: 1.35rem; /* 修改2：价格标签字体放大0.5倍（原0.9rem→1.35rem） */
+            font-weight: 700;
+            padding: 0.45rem 1.2rem; /* 同步放大内边距，保持标签比例（原0.3/0.8→0.45/1.2） */
+            border-radius: 20px;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .pic-box:hover .price-tag {
+            transform: scale(1.1);
+            background: rgba(255, 87, 34, 1);
+        }
+        /* 新增样式：图片下方蒙版式商品名称标签 */
+        .name-tag {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.75)); /* 渐变蒙版，上透下暗 */
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            z-index: 9; /* 低于价格标签，高于图片 */
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            text-align: center;
+        }
+        /* 原有：图片放大遮罩层 */
+        .img-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            cursor: zoom-out;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .img-mask.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .mask-img-box {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            cursor: move;
+            transform-origin: center center;
+            transition: transform 0.1s ease;
+        }
+        .mask-img {
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+        }
+        /* 响应式适配：同步修改图片高度、价格标签、名称标签 */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            .nav-bar {
+                padding: 0.8rem 1.5rem;
+                gap: 1rem;
+            }
+            .nav-item {
+                font-size: 1.1rem;
+                padding: 0.4rem 0.8rem;
+            }
+            .pic-box {
+                height: 320px; /* 响应式图片高度同步翻倍（原160px→320px） */
+            }
+            .data-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 1.5rem 2rem;
+                gap: 1rem;
+            }
+            .welcome-text {
+                font-size: 2rem;
+                margin-left: 0 !important;
+                margin-top: 0.3rem;
+                white-space: normal;
+            }
+            .count-item {
+                font-size: 1.4rem;
+            }
+            .count-item span {
+                font-size: 1.6rem;
+            }
+            .price-tag {
+                font-size: 1.2rem; /* 响应式价格标签放大0.5倍（原0.8rem→1.2rem） */
+                padding: 0.3rem 0.9rem; /* 同步内边距 */
+            }
+            .name-tag {
+                font-size: 1rem; /* 响应式名称标签适配 */
+                padding: 0.8rem;
+            }
+            .img-mask {
+                padding: 1rem;
+            }
+            .mask-img-box {
+                max-width: 95%;
+                max-height: 95%;
+            }
+        }
+        /* 小屏再适配，同步修改 */
+        @media (max-width: 480px) {
+            .nav-bar {
+                gap: 0.8rem;
+                justify-content: center;
+            }
+            .welcome-text {
+                font-size: 1.8rem;
+            }
+            .pic-box {
+                height: 280px; /* 小屏图片高度同步翻倍（原140px→280px） */
+            }
+            .price-tag {
+                font-size: 1rem; /* 小屏价格标签适配 */
+                padding: 0.25rem 0.8rem;
+            }
+            .name-tag {
+                font-size: 0.9rem; /* 小屏名称标签适配 */
+                padding: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid px-0 max-w-7xl mx-auto">
+        <!-- 导航栏：无修改 -->
+        <div class="nav-bar">
+            <div class="nav-item active" id="navIndex">首页</div>
+            <a href="https://daziya.com/" target="_blank" class="nav-item" id="navTyping">打字练习</a>
+            <a href="time.html" target="_blank" class="nav-item" id="navTimer">计时器</a>
+            <a href="luck.html" target="_blank" class="nav-item" id="navluck">幸运抽奖</a>
+            <div class="nav-item" id="navLogout">退出登录</div>
+        </div>
+
+        <!-- 数据栏、图片展示区、放大遮罩层：无结构修改 -->
+        <div class="data-bar">
+            <div class="count-item">
+                星星数量：<span id="starCount">0</span>
+            </div>
+            <div class="count-item score-item">
+                积分数量：<span id="scoreCount">0</span>
+                <span class="welcome-text">欢迎你，yue!</span>
+            </div>
+        </div>
+        <div class="pic-title">奖励展示</div>
+        <div class="row g-4" id="picContainer"></div>
+    </div>
+    <div class="img-mask" id="imgMask">
+        <div class="mask-img-box" id="maskImgBox">
+            <img src="" alt="放大预览图" class="mask-img" id="maskImg">
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 原有元素获取+配置常量：无修改
+        const starCountEl = document.getElementById('starCount');
+        const scoreCountEl = document.getElementById('scoreCount');
+        const picContainer = document.getElementById('picContainer');
+        const imgMask = document.getElementById('imgMask');
+        const maskImg = document.getElementById('maskImg');
+        const maskImgBox = document.getElementById('maskImgBox');
+        const navIndex = document.getElementById('navIndex');
+        const navLogout = document.getElementById('navLogout');
+        const DATA_JSON = 'data.json';
+        const PRICE_JSON = 'price.json';
+        const PIC_FOLDER = 'pic/';
+        const PIC_TOTAL = 15;
+        let priceData = {};
+        let scale = 1;
+        let isDragging = false;
+        let startX, startY, offsetX, offsetY;
+        let isEventBinded = false;
+
+        window.onload = async function () {
+            try {
+                const fetchOptions = {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    mode: 'cors'
+                };
+                const [userDataRes, priceDataRes] = await Promise.all([
+                    fetch(DATA_JSON, fetchOptions),
+                    fetch(PRICE_JSON, fetchOptions)
+                ]);
+                if (!userDataRes.ok) throw new Error('data.json 读取失败，状态码：' + userDataRes.status);
+                if (!priceDataRes.ok) throw new Error('price.json 读取失败，状态码：' + priceDataRes.status);
+                const userData = await userDataRes.json();
+                priceData = await priceDataRes.json();
+                window.userData = userData;
+                starCountEl.textContent = Number(userData.starNum) || 0;
+                scoreCountEl.textContent = Number(userData.scoreNum) || 0;
+            } catch (err) {
+                alert('加载数据失败：' + err.message + '\n将展示默认图片');
+                console.error('数据加载错误：', err);
+            } finally {
+                if (!isEventBinded) {
+                    createPicBoxes(); // 核心修改在该方法内
+                    bindImgClickEvent();
+                    bindNavEvent();
+                    isEventBinded = true;
+                }
+            }
+        };
+
+        // 创建图片盒子：修改3 - 新增商品名称标签（读取price.json的m_1至m_15）
+        function createPicBoxes() {
+            picContainer.innerHTML = '';
+            for (let i = 1; i <= PIC_TOTAL; i++) {
+                const col = document.createElement('div');
+                col.className = 'col-12 col-sm-6 col-md-4';
+                // 价格容错：原有逻辑无修改
+                const picPrice = priceData[i] ? String(priceData[i]) : '暂无';
+                // 新增：商品名称获取（从price.json的m_1~m_15读取，容错为“奖励商品X”）
+                const picName = priceData[`m_${i}`] ? String(priceData[`m_${i}`]) : `奖励商品${i}`;
+                // 新增name-tag标签到HTML结构中
+                col.innerHTML = `
+                <div class="pic-box">
+                    <div class="price-tag">${picPrice}</div>
+                    <div class="name-tag">${picName}</div> <!-- 蒙版商品名称标签 -->
+                    <img src="${PIC_FOLDER}${i}.png" alt="奖励图片${i}" data-src="${PIC_FOLDER}${i}.png"
+                         onerror="this.onerror=null;this.src='https://picsum.photos/800/440?random=${i}';this.dataset.src='https://picsum.photos/800/440?random=${i}'">
+                </div>`; // 兜底图片尺寸同步修改为翻倍后的比例
+                picContainer.appendChild(col);
+            }
+        }
+
+        // 以下所有JS方法：无任何修改，保留原有所有功能（放大、缩放、拖拽、导航等）
+        function bindImgClickEvent() {
+            const allImgs = document.querySelectorAll('.pic-box img');
+            allImgs.forEach(img => {
+                img.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const imgSrc = img.dataset.src || img.src;
+                    openImgMask(imgSrc);
+                });
+            });
+            imgMask.addEventListener('click', closeImgMask);
+            maskImgBox.addEventListener('click', (e) => e.stopPropagation());
+            maskImgBox.addEventListener('wheel', handleWheelZoom, { passive: false });
+            bindDragEvent();
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && imgMask.classList.contains('show')) {
+                    closeImgMask();
+                }
+            });
+        }
+        function openImgMask(src) {
+            maskImg.src = src;
+            scale = 1;
+            offsetX = 0;
+            offsetY = 0;
+            maskImgBox.style.transform = 'translate(0, 0) scale(1)';
+            imgMask.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            maskImg.onload = function () {
+                maskImg.onload = null;
+            };
+        }
+        function closeImgMask() {
+            imgMask.classList.remove('show');
+            document.body.style.overflow = 'auto';
+            scale = 1;
+            isDragging = false;
+            offsetX = 0;
+            offsetY = 0;
+            maskImgBox.style.cursor = 'move';
+        }
+        function handleWheelZoom(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            const newScale = Math.max(0.5, Math.min(3, scale + delta));
+            if (newScale === scale) return;
+            const rect = maskImgBox.getBoundingClientRect();
+            const centerX = e.clientX - rect.left - rect.width / 2;
+            const centerY = e.clientY - rect.top - rect.height / 2;
+            const offsetXDelta = (centerX * (newScale - scale)) / scale;
+            const offsetYDelta = (centerY * (newScale - scale)) / scale;
+            scale = newScale;
+            offsetX = offsetX - offsetXDelta;
+            offsetY = offsetY - offsetYDelta;
+            maskImgBox.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+        }
+        function bindDragEvent() {
+            maskImgBox.addEventListener('mousedown', (e) => {
+                if (scale <= 1) return;
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                const transformStr = maskImgBox.style.transform;
+                const translateMatch = transformStr.match(/translate\((-?\d+\.?\d*)px, (-?\d+\.?\d*)px\)/);
+                offsetX = translateMatch ? parseFloat(translateMatch[1]) : 0;
+                offsetY = translateMatch ? parseFloat(translateMatch[2]) : 0;
+                maskImgBox.style.cursor = 'grabbing';
+                document.body.style.userSelect = 'none';
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                maskImgBox.style.transform = `translate(${offsetX + dx}px, ${offsetY + dy}px) scale(${scale})`;
+            });
+            function endDrag() {
+                if (!isDragging) return;
+                isDragging = false;
+                maskImgBox.style.cursor = 'move';
+                document.body.style.userSelect = 'auto';
+                const transformStr = maskImgBox.style.transform;
+                const translateMatch = transformStr.match(/translate\((-?\d+\.?\d*)px, (-?\d+\.?\d*)px\)/);
+                if (translateMatch) {
+                    offsetX = parseFloat(translateMatch[1]);
+                    offsetY = parseFloat(translateMatch[2]);
+                }
+            }
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('mouseleave', endDrag);
+        }
+        function bindNavEvent() {
+            navIndex.addEventListener('click', () => {
+                if (confirm('确定要刷新首页吗？')) {
+                    window.location.reload();
+                }
+            });
+            navLogout.addEventListener('click', () => {
+                if (confirm('确定要退出登录吗？')) {
+                    window.close();
+                }
+            });
+            const navItems = document.querySelectorAll('.nav-bar .nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function () {
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    if (!this.href) {
+                        this.classList.add('active');
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
